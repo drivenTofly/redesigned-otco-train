@@ -39,6 +39,15 @@ h1 em { color: var(--green); font-weight: 400; }
 .form-options { display: flex; align-items: center; gap: 21px; flex-wrap: wrap; margin: 19px 0 25px; }
 .select-field { display: flex; align-items: center; gap: 8px; color: #999b90; }
 .select-field select { border: 0; padding: 4px 17px 4px 0; color: #4d554b; background: transparent; font: 11px 'DM Sans', sans-serif; cursor: pointer; }
+.choice-field { min-width: 0; margin: 0; padding: 0; border: 0; }
+.choice-field legend { margin-bottom: 6px; padding: 0; color: #999b90; font-size: 9px; font-weight: 700; letter-spacing: 1.2px; }
+.choice-options { display: inline-flex; overflow: hidden; border: 1px solid #d9dbd1; border-radius: 2px; background: #fffefa; }
+.choice-option { position: relative; cursor: pointer; }
+.choice-option + .choice-option { border-left: 1px solid #e5e6df; }
+.choice-option input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.choice-option span { display: block; min-width: 67px; padding: 7px 9px; color: #74796e; text-align: center; font-size: 10px; transition: background .16s, color .16s; }
+.choice-option.selected span { color: #fff; background: var(--green); }
+.choice-option input:focus-visible + span { outline: 2px solid #63836a; outline-offset: -3px; }
 .length-note { margin-left: auto; color: #999b90; font-size: 8px; letter-spacing: 1px; }
 .length-note span { padding: 0 4px; color: var(--orange); }
 .primary-button { min-height: 43px; display: inline-flex; align-items: center; justify-content: center; gap: 24px; padding: 0 17px; border: 0; border-radius: 2px; color: white; background: var(--green); font-size: 11px; font-weight: 600; cursor: pointer; transition: background .18s, transform .18s; }

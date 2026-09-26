@@ -8,43 +8,94 @@ type OutlineSection = {
 }
 
 type Stage = 'topic' | 'outline' | 'draft'
+type BlogStyle = 'Funny' | 'Serious' | 'Persuasive'
+type DomainExpertise = 'History' | 'Technology' | 'Math'
 
-const outlineAngles = [
-  'The shift behind {topic}',
-  'What most people miss',
-  'A more useful way to approach it',
-  'What this could mean next',
-]
+const blogStyles: BlogStyle[] = ['Funny', 'Serious', 'Persuasive']
+const expertiseOptions: DomainExpertise[] = ['History', 'Technology', 'Math']
 
-const sectionPrompts = [
-  'Start with a concrete example from everyday life. It gives readers something familiar to hold onto before introducing the larger shift.',
-  'Look beyond the most obvious explanation. What context, assumption, or quieter perspective changes how this story reads?',
-  'Give readers a practical lens they can carry with them. A small, specific next step is more useful than a sweeping prescription.',
-  'Close by looking ahead without pretending the outcome is certain. Leave readers with one question worth carrying forward.',
-]
+const outlineAngles: Record<BlogStyle, string[]> = {
+  Funny: [
+    'The everyday absurdity of {topic}',
+    'Why it deserves a closer look',
+    'The part that might actually work',
+    'What happens when we take it seriously',
+  ],
+  Serious: [
+    'The context behind {topic}',
+    'What the evidence and experience suggest',
+    'The practical implications',
+    'Questions worth carrying forward',
+  ],
+  Persuasive: [
+    'The case for paying attention to {topic}',
+    'The strongest case for a closer look',
+    'A practical path toward change',
+    'The next step readers can take',
+  ],
+}
 
-function makeDraft(topic: string, sections: OutlineSection[], audience: string, tone: string) {
-  const openings: Record<string, string> = {
-    Thoughtful: `A useful place to begin with ${topic} is how it shows up in everyday choices.`,
-    Conversational: `So what does ${topic} actually look like in everyday life?`,
-    Practical: `Start with one practical question about ${topic}: what can people do with it?`,
-    Playful: `There is more to ${topic} than meets the eye, especially in everyday life.`,
+const sectionPrompts: Record<DomainExpertise, string[]> = {
+  History: [
+    'Place the topic in its time and place. Identify the conditions and choices that shaped it.',
+    'Trace a significant person, event, or turning point and explain what changed as a result.',
+    'Compare what persisted with what shifted, using specific examples rather than treating the past as a single story.',
+    'Connect the historical perspective to a question readers can consider today without assuming history repeats itself.',
+  ],
+  Technology: [
+    'Explain the system in plain language, including the problem it is designed to solve.',
+    'Show how the people, data, or processes interact within the system.',
+    'Examine the benefits alongside limitations, risks, and practical trade-offs.',
+    'Look ahead to possible developments while distinguishing evidence from speculation.',
+  ],
+  Math: [
+    'State the question, define the variables, and make the assumptions explicit.',
+    'Show the relationship or calculation step by step, using a small example.',
+    'Check the result and explain what the units, scale, or possible error mean.',
+    'Interpret the result in context and state what the model does not capture.',
+  ],
+}
+
+function makeDraft(topic: string, sections: OutlineSection[], audience: string, style: BlogStyle, expertise: DomainExpertise) {
+  const expertiseOpenings: Record<DomainExpertise, string> = {
+    History: `A useful way to understand ${topic} is to trace the people, events, and forces that shaped it over time.`,
+    Technology: `To understand ${topic}, look at the problem it addresses, how its parts interact, and who is affected.`,
+    Math: `A clear analysis of ${topic} starts with a well-defined question, explicit assumptions, and careful interpretation of the result.`,
   }
-  const intro = openings[tone] ?? openings.Thoughtful
+  const openings: Record<BlogStyle, string> = {
+    Funny: `Every subject has a backstory, a few surprises, and at least one detail that sounds made up. ${expertiseOpenings[expertise]}`,
+    Serious: `Begin with the fundamentals. ${expertiseOpenings[expertise]}`,
+    Persuasive: `The strongest case begins with how a subject works and why it matters. ${expertiseOpenings[expertise]}`,
+  }
+  const styleDirections: Record<BlogStyle, string> = {
+    Funny: 'Keep the explanation lively without sacrificing accuracy.',
+    Serious: 'Be precise and measured, separating evidence from interpretation.',
+    Persuasive: 'Connect this point to the case you want readers to consider.',
+  }
+  const expertiseClosings: Record<DomainExpertise, string> = {
+    History: 'Use past patterns as perspective, not as a prediction.',
+    Technology: 'Judge the system by its evidence, trade-offs, and real-world outcomes.',
+    Math: 'Check the assumptions and units before applying the result.',
+  }
+  const closings: Record<BlogStyle, string> = {
+    Funny: `For ${audience.toLowerCase()}, the point is not to take every detail solemnly. It is to notice what matters, laugh at what deserves it, and keep asking better questions about ${topic}.`,
+    Serious: `For ${audience.toLowerCase()}, the next step is to weigh the evidence, keep the trade-offs in view, and continue the conversation about ${topic} with care.`,
+    Persuasive: `For ${audience.toLowerCase()}, the next step is clear: choose one practical action and invite others to join.`,
+  }
   const body = sections
     .map(({ heading, note }, index) => {
-      const detail = note.trim() || sectionPrompts[index % sectionPrompts.length]
+      const detail = note.trim() || `${styleDirections[style]} ${sectionPrompts[expertise][index % sectionPrompts[expertise].length]}`
       return `${heading}\n\n${detail}`
     })
     .join('\n\n')
-  const close = `For ${audience.toLowerCase()}, the point is not to predict every outcome. It is to stay curious, notice what is working, and make the next decision with intention. That is a grounded way to keep thinking about ${topic}.`
-  return `${topic}\n\n${intro}\n\n${body}\n\n${close}`
+  return `${topic}\n\n${openings[style]}\n\n${body}\n\n${closings[style]} ${expertiseClosings[expertise]}`
 }
 
 function App() {
   const [topic, setTopic] = useState('')
   const [audience, setAudience] = useState('Curious readers')
-  const [tone, setTone] = useState('Thoughtful')
+  const [style, setStyle] = useState<BlogStyle>('Serious')
+  const [expertise, setExpertise] = useState<DomainExpertise>('Technology')
   const [stage, setStage] = useState<Stage>('topic')
   const [outline, setOutline] = useState<OutlineSection[]>([])
   const [draft, setDraft] = useState('')
@@ -55,7 +106,7 @@ function App() {
     if (!cleanedTopic) return
     setTopic(cleanedTopic)
     setOutline(
-      outlineAngles.map((angle, index) => ({
+      outlineAngles[style].map((angle, index) => ({
         id: index + 1,
         heading: angle.replace('{topic}', cleanedTopic),
         note: '',
@@ -87,7 +138,7 @@ function App() {
   }
 
   function startDraft() {
-    setDraft(makeDraft(topic, outline, audience, tone))
+    setDraft(makeDraft(topic, outline, audience, style, expertise))
     setStage('draft')
   }
 
@@ -161,11 +212,28 @@ function App() {
                       <option>Curious readers</option><option>Industry peers</option><option>Newcomers</option><option>Busy professionals</option>
                     </select>
                   </label>
-                  <label className="select-field">IN A
-                    <select value={tone} onChange={(event) => setTone(event.target.value)}>
-                      <option>Thoughtful</option><option>Conversational</option><option>Practical</option><option>Playful</option>
-                    </select>
-                  </label>
+                  <fieldset className="choice-field">
+                    <legend>STYLE</legend>
+                    <div className="choice-options">
+                      {blogStyles.map((option) => (
+                        <label className={`choice-option ${style === option ? 'selected' : ''}`} key={option}>
+                          <input type="radio" name="blog-style" value={option} checked={style === option} onChange={() => setStyle(option)} />
+                          <span>{option}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
+                  <fieldset className="choice-field">
+                    <legend>EXPERTISE</legend>
+                    <div className="choice-options">
+                      {expertiseOptions.map((option) => (
+                        <label className={`choice-option ${expertise === option ? 'selected' : ''}`} key={option}>
+                          <input type="radio" name="domain-expertise" value={option} checked={expertise === option} onChange={() => setExpertise(option)} />
+                          <span>{option}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
                   <span className="length-note">SHORT READ <span>·</span> ~180 WORDS</span>
                 </div>
                 <button className="primary-button" type="submit" disabled={!topic.trim()}>Shape an outline <span aria-hidden="true">↗</span></button>
@@ -186,7 +254,7 @@ function App() {
                     <span className="outline-index">{String(index + 1).padStart(2, '0')}</span>
                     <div className="outline-fields">
                       <input aria-label={`Section ${index + 1} heading`} value={section.heading} onChange={(event) => updateSection(section.id, 'heading', event.target.value)} />
-                      <textarea aria-label={`Notes for section ${index + 1}`} rows={2} placeholder="A note, example, or point to make (optional)" value={section.note} onChange={(event) => updateSection(section.id, 'note', event.target.value)} />
+                      <textarea aria-label={`Notes for section ${index + 1}`} rows={2} placeholder={`${sectionPrompts[expertise][index % sectionPrompts[expertise].length]} (optional)`} value={section.note} onChange={(event) => updateSection(section.id, 'note', event.target.value)} />
                     </div>
                     <div className="outline-actions">
                       <button type="button" aria-label={`Move section ${index + 1} up`} disabled={index === 0} onClick={() => moveSection(index, -1)}>↑</button>
@@ -205,7 +273,7 @@ function App() {
             <div className="stage-content draft-stage">
               <div className="eyebrow"><span>03</span><span className="eyebrow-line" />LET IT TAKE FORM</div>
               <div className="draft-title-row"><div><h1>Your first<br /><em>rough draft.</em></h1><p className="stage-intro">A starting point, not the final word. Make it sound like you.</p></div><button className="copy-button" type="button" onClick={copyDraft}>{copied ? 'Copied' : 'Copy draft'} <span aria-hidden="true">↗</span></button></div>
-              <div className="draft-meta"><span>{tone.toUpperCase()} TONE</span><span>FOR {audience.toUpperCase()}</span><button type="button" onClick={() => setStage('outline')}>← Edit outline</button></div>
+              <div className="draft-meta"><span>{style.toUpperCase()} STYLE</span><span>{expertise.toUpperCase()} LENS</span><span>FOR {audience.toUpperCase()}</span><button type="button" onClick={() => setStage('outline')}>← Edit outline</button></div>
               <textarea className="draft-editor" aria-label="Edit your blog draft" value={draft} onChange={(event) => setDraft(event.target.value)} />
               <div className="bottom-actions draft-bottom"><button type="button" className="back-button" onClick={() => setStage('outline')}>← Back to outline</button><button type="button" className="primary-button" onClick={startOver}>Start a new post <span aria-hidden="true">+</span></button></div>
               <p className="draft-disclaimer">This local starter uses a simple template. It does not research sources or verify claims.</p>
